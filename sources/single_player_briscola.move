@@ -438,12 +438,12 @@ public entry fun playCard(game: &mut Game, player_card_index: u64, ctx: &mut TxC
     }
 
     #[test_only]
-    public fun test_set_current_player(game: &mut Game, player: address) {
+    public fun setCurrentPlayer(game: &mut Game, player: address) {
         game.current_player = player;
     }
 
     #[test_only]
-    public fun test_has_pending_house_card(game: &Game): bool {
+    public fun hasPendingHouseCard(game: &Game): bool {
         option::is_some(&game.pending_house_card)
     }
 }

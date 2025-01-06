@@ -51,13 +51,13 @@ module briscola::briscola_tests {
             let mut game = test_scenario::take_from_sender<Game>(test);
             
             // Set current_player to @0x0 to simulate house's turn
-            single_player_briscola::test_set_current_player(&mut game, @0x0);
+            single_player_briscola::setCurrentPlayer(&mut game, @0x0);
             
             // Call checkHousePlay
             single_player_briscola::checkHousePlay(&mut game, test_scenario::ctx(test));
             
             // Verify that pending_house_card is set
-            assert!(single_player_briscola::test_has_pending_house_card(&game), 11);
+            assert!(single_player_briscola::hasPendingHouseCard(&game), 11);
             
             // Verify house hand size decreased by 1
             assert!(single_player_briscola::getHouseHandSize(&game) == 2, 12);
@@ -102,13 +102,13 @@ module briscola::briscola_tests {
             let mut game = test_scenario::take_from_sender<Game>(test);
             
             // Set current_player to house
-            single_player_briscola::test_set_current_player(&mut game, @0x0);
+            single_player_briscola::setCurrentPlayer(&mut game, @0x0);
             
             // House plays first
             single_player_briscola::checkHousePlay(&mut game, test_scenario::ctx(test));
             
             // Verify house played a card
-            assert!(single_player_briscola::test_has_pending_house_card(&game), 16);
+            assert!(single_player_briscola::hasPendingHouseCard(&game), 16);
             assert!(single_player_briscola::getHouseHandSize(&game) == 2, 17);
             
             // Player responds
