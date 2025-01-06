@@ -1,6 +1,5 @@
 # Single Player Briscola on Sui Move
 
-![Briscola Screenshot](screenshots/briscola.jpg)
 A simple implementation of the classic Italian card game Briscola, built using the Move programming language on the Sui blockchain. This project serves as an experimental playground for learning Move development.
 
 ## About Briscola
