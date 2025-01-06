@@ -55,6 +55,29 @@ This project was created primarily as a learning exercise to:
 - Implement game logic in a blockchain context
 - Practice handling game state and events
 
+## Devnet Contract Address
+
+The devnet contract is deployed at:
+
+`0x434a19b0a4cd06afd4d36ee3d60ea0793a334d294c3419c97ad966f706524157`
+
+## Setup and Installation
+
+### Prerequisites
+
+1. Install Sui by following the official guide: [Install Sui to Build](https://docs.sui.io/guides/developer/getting-started/sui-install)
+2. Make sure you have Git installed on your system
+
+### Project Setup
+
+1. Clone the repository & cd sui-briscola
+2. sui move build
+
+### Run Tests
+
+sui move test
+
+![Run Tests Screenshot](screenshots/tests.png)
 
 ## Note
 
