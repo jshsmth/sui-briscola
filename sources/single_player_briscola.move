@@ -359,54 +359,84 @@ public entry fun playCard(game: &mut Game, player_card_index: u64, ctx: &mut TxC
     };
 }
 
-fun determineWinner(player_card: &Card, house_card: &Card, trump_card: &Card, player_address: address): address {
-    let house_address = @0x0; // Using 0x0 as house address
+    fun determineWinner(player_card: &Card, house_card: &Card, trump_card: &Card, player_address: address): address {
+        let house_address = @0x0; // Using 0x0 as house address
 
-    // If both cards are the same suit
-    if (string::as_bytes(&player_card.suit) == string::as_bytes(&house_card.suit)) {
-        if (getCardValue(player_card) > getCardValue(house_card)) {
+        // If both cards are the same suit
+        if (string::as_bytes(&player_card.suit) == string::as_bytes(&house_card.suit)) {
+            if (getCardValue(player_card) > getCardValue(house_card)) {
+                return player_address
+            } else {
+                return house_address
+            }
+        };
+
+        // If one card is trump suit
+        if (string::as_bytes(&player_card.suit) == string::as_bytes(&trump_card.suit)) {
             return player_address
-        } else {
+        };
+        if (string::as_bytes(&house_card.suit) == string::as_bytes(&trump_card.suit)) {
             return house_address
-        }
-    };
+        };
 
-    // If one card is trump suit
-    if (string::as_bytes(&player_card.suit) == string::as_bytes(&trump_card.suit)) {
-        return player_address
-    };
-    if (string::as_bytes(&house_card.suit) == string::as_bytes(&trump_card.suit)) {
-        return house_address
-    };
-
-    house_address
-}
+        house_address
+    }
 
 /*=================== HELPER FUNCTIONS ========================*/
 
-fun getCardValue(card: &Card): u8 {
-    let rank_bytes = string::as_bytes(&card.rank);
-    let ace_bytes = ACE;
-    let three_bytes = THREE; 
-    let king_bytes = KING;
-    let knight_bytes = KNIGHT;
-    let jack_bytes = JACK;
+    fun getCardValue(card: &Card): u8 {
+        let rank_bytes = string::as_bytes(&card.rank);
+        let ace_bytes = ACE;
+        let three_bytes = THREE; 
+        let king_bytes = KING;
+        let knight_bytes = KNIGHT;
+        let jack_bytes = JACK;
 
-    if (rank_bytes == &ace_bytes) {
-        return 11
-    };
-    if (rank_bytes == &three_bytes) {
-        return 10
-    };
-    if (rank_bytes == &king_bytes) {
-        return 4
-    };
-    if (rank_bytes == &knight_bytes) {
-        return 3
-    };
-    if (rank_bytes == &jack_bytes) {
-        return 2
-    };
-    0
-}
+        if (rank_bytes == &ace_bytes) {
+            return 11
+        };
+        if (rank_bytes == &three_bytes) {
+            return 10
+        };
+        if (rank_bytes == &king_bytes) {
+            return 4
+        };
+        if (rank_bytes == &knight_bytes) {
+            return 3
+        };
+        if (rank_bytes == &jack_bytes) {
+            return 2
+        };
+        0
+    }
+
+
+    /*=================== TEST ONLY FUNCTIONS ========================*/
+    #[test_only]
+    public fun getDeckSize(game: &Game): u64 {
+        vector::length(&game.deck)
+    }
+
+    #[test_only]
+    public fun getPlayerHandSize(game: &Game): u64 {
+        vector::length(&game.player_hand)
+    }
+
+    #[test_only]
+    public fun getHouseHandSize(game: &Game): u64 {
+        vector::length(&game.house_hand)
+    }
+
+    #[test_only]
+    public fun getTrumpCard(game: &Game): Card {
+        game.trump_card
+    }
+
+    public fun getCardSuit(card: &Card): String {
+        card.suit
+    }
+
+    public fun getCardRank(card: &Card): String {
+        card.rank
+    }
 }
