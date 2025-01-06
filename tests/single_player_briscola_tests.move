@@ -1,14 +1,14 @@
 #[test_only]
 module briscola::briscola_tests {
     use sui::test_scenario::{Self};
-    use briscola::single_player_briscola::{Self, Game};
+    use briscola::single_player_briscola::{Self, Game, GameConfig};
     use std::string;
 
     const PLAYER: address = @0xA;
 
     #[test]
     fun test_create_game() {
-        let mut scenario =  test_scenario::begin(PLAYER);
+         let mut scenario =  test_scenario::begin(PLAYER);
         let test = &mut scenario;
         
         test_scenario::next_tx(test, PLAYER);
@@ -73,8 +73,11 @@ module briscola::briscola_tests {
         let mut scenario = test_scenario::begin(PLAYER);
         let test = &mut scenario;
         
+        // First transaction: Initialize config and create game
         test_scenario::next_tx(test, PLAYER);
         {
+            // Create and share the config object
+            single_player_briscola::initForTesting(test_scenario::ctx(test));
             single_player_briscola::createGame(test_scenario::ctx(test));
         };
 
@@ -82,9 +85,10 @@ module briscola::briscola_tests {
         test_scenario::next_tx(test, PLAYER);
         {
             let mut game = test_scenario::take_from_sender<Game>(test);
+            let mut config = test_scenario::take_shared<GameConfig>(test);
             
             // Player plays first card (index 0)
-            single_player_briscola::playCard(&mut game, 0, test_scenario::ctx(test));
+            single_player_briscola::playCard(&mut game, 0, &mut config, test_scenario::ctx(test));
             
             // Verify hand sizes decreased
             assert!(single_player_briscola::getPlayerHandSize(&game) == 3, 13);
@@ -94,12 +98,14 @@ module briscola::briscola_tests {
             assert!(single_player_briscola::getDeckSize(&game) == 31, 15);
             
             test_scenario::return_to_sender(test, game);
+            test_scenario::return_shared(config);
         };
 
         // Test house playing first
         test_scenario::next_tx(test, PLAYER);
         {
             let mut game = test_scenario::take_from_sender<Game>(test);
+            let mut config = test_scenario::take_shared<GameConfig>(test);
             
             // Set current_player to house
             single_player_briscola::setCurrentPlayer(&mut game, @0x0);
@@ -112,7 +118,7 @@ module briscola::briscola_tests {
             assert!(single_player_briscola::getHouseHandSize(&game) == 2, 17);
             
             // Player responds
-            single_player_briscola::playCard(&mut game, 0, test_scenario::ctx(test));
+            single_player_briscola::playCard(&mut game, 0, &mut config, test_scenario::ctx(test));
             
             // Verify hand sizes after drawing
             assert!(single_player_briscola::getPlayerHandSize(&game) == 3, 18);
@@ -122,6 +128,7 @@ module briscola::briscola_tests {
             assert!(single_player_briscola::getDeckSize(&game) == 29, 20);
             
             test_scenario::return_to_sender(test, game);
+            test_scenario::return_shared(config);
         };
         
         test_scenario::end(scenario);

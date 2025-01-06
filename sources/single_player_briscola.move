@@ -435,6 +435,16 @@ public entry fun playCard(game: &mut Game, player_card_index: u64, config: &mut 
 
     /*=================== TEST ONLY FUNCTIONS ========================*/
     #[test_only]
+    public fun initForTesting(ctx: &mut TxContext) {
+        let config = GameConfig {
+            id: object::new(ctx),
+            admin: tx_context::sender(ctx),
+            total_games_played: 0,
+        };
+        transfer::share_object(config);
+    }
+
+    #[test_only]
     public fun getDeckSize(game: &Game): u64 {
         vector::length(&game.deck)
     }
