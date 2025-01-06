@@ -96,9 +96,31 @@ module briscola::single_player_briscola {
         card: Card
     }
 
+    public struct ModuleInitEvent has copy, drop {
+        deployer: address,
+        timestamp: u64
+    }
+
+    public struct GameConfig has key {
+        id: UID,
+        admin: address,
+        total_games_played: u64,
+    }
+
     /*===================INIT========================*/
-    fun init(_ctx: &mut TxContext) {
-        // Module initialization logic can go here if needed
+    fun init(ctx: &mut TxContext) {
+        let config = GameConfig {
+            id: object::new(ctx),
+            admin: tx_context::sender(ctx),
+            total_games_played: 0,
+        };
+        
+        transfer::share_object(config);
+        
+        event::emit(ModuleInitEvent {
+            deployer: tx_context::sender(ctx),
+            timestamp: tx_context::epoch(ctx)
+        });
     }
 
 
@@ -223,7 +245,7 @@ public entry fun checkHousePlay(game: &mut Game, ctx: &mut TxContext) {
 
 /*=================== PLAY CARD ========================*/
 
-public entry fun playCard(game: &mut Game, player_card_index: u64, ctx: &mut TxContext) {
+public entry fun playCard(game: &mut Game, player_card_index: u64, config: &mut GameConfig, ctx: &mut TxContext) {
     // Check if game is already finished
     if (game.status == GAME_STATUS_FINISHED) {
         let winner = if (game.player_score > game.house_score) {
@@ -333,6 +355,9 @@ public entry fun playCard(game: &mut Game, player_card_index: u64, ctx: &mut TxC
     if (vector::is_empty(&game.deck) && 
         (vector::is_empty(&game.player_hand) || vector::is_empty(&game.house_hand))) {
         
+        // Increment total games played
+        config.total_games_played = config.total_games_played + 1;
+
         if (game.player_score == game.house_score) {
             game.status = GAME_STATUS_DRAW;
             event::emit(GameDrawEvent {

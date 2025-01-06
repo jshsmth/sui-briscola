@@ -59,7 +59,7 @@ This project was created primarily as a learning exercise to:
 
 The devnet contract is deployed at:
 
-`0x434a19b0a4cd06afd4d36ee3d60ea0793a334d294c3419c97ad966f706524157`
+`0x0181fc53593558e786446faed4709f7aded342592f750ffc4abf2aab5c0dc9e4`
 
 ## Setup and Installation
 
