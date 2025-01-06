@@ -1,9 +1,6 @@
 module briscola::single_player_briscola {
     use std::string::{Self, String};
-    use sui::coin::{Self, Coin};
     use sui::event::{Self};
-    use sui::sui::SUI;
-    use sui::balance::{Self, Balance};
 
     /*===================SUITS========================*/
     const COINS: vector<u8> = b"Coins";
@@ -438,5 +435,15 @@ public entry fun playCard(game: &mut Game, player_card_index: u64, ctx: &mut TxC
 
     public fun getCardRank(card: &Card): String {
         card.rank
+    }
+
+    #[test_only]
+    public fun test_set_current_player(game: &mut Game, player: address) {
+        game.current_player = player;
+    }
+
+    #[test_only]
+    public fun test_has_pending_house_card(game: &Game): bool {
+        option::is_some(&game.pending_house_card)
     }
 }
