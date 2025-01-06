@@ -51,6 +51,8 @@ module briscola::single_player_briscola {
         player_score: u8,
         house_score: u8,
         trump_card: Card,
+        current_player: address,
+        pending_house_card: Option<PendingHouseCard>,
     }
 
     /*===================EVENTS========================*/
@@ -87,6 +89,14 @@ module briscola::single_player_briscola {
     public struct GameDrawEvent has copy, drop {
         final_player_score: u8,
         final_house_score: u8,
+    }
+
+    public struct HousePlayedFirstEvent has copy, drop {
+        house_card: Card,
+    }
+
+    public struct PendingHouseCard has store, drop {
+        card: Card
     }
 
     /*===================INIT========================*/
@@ -163,6 +173,8 @@ module briscola::single_player_briscola {
             player_score: 0,
             house_score: 0,
             trump_card,
+            current_player: tx_context::sender(ctx),
+            pending_house_card: option::none(),
         };
 
         // Deal initial cards to player and house
@@ -193,13 +205,32 @@ module briscola::single_player_briscola {
 
 /*=================== PLAY CARD ========================*/
 
+public entry fun checkHousePlay(game: &mut Game, ctx: &mut TxContext) {
+    let sender = tx_context::sender(ctx);
+    
+    // Verify it's player's turn
+    assert!(game.player == sender, ENotPlayerTurn);
+    
+    if (game.current_player == @0x0) {
+        // House plays first
+        let house_card = vector::remove(&mut game.house_hand, 0);
+        
+        // Store the house card and emit event
+        game.pending_house_card = option::some(PendingHouseCard { card: house_card });
+        
+        event::emit(HousePlayedFirstEvent {
+            house_card,
+        });
+    };
+}
+
 public entry fun playCard(game: &mut Game, player_card_index: u64, ctx: &mut TxContext) {
     // Check if game is already finished
     if (game.status == GAME_STATUS_FINISHED) {
         let winner = if (game.player_score > game.house_score) {
             game.player
         } else {
-            @0x0 // house address
+            @0x0
         };
         
         event::emit(GameOverEvent {
@@ -210,39 +241,70 @@ public entry fun playCard(game: &mut Game, player_card_index: u64, ctx: &mut TxC
         return
     };
 
-    // Verify game state and player
-    assert!(game.player == tx_context::sender(ctx), ENotPlayerTurn);
-    assert!(player_card_index < vector::length(&game.player_hand), EInvalidCard);
-
-    // Get player's card and remove it from hand
-    let player_card = vector::remove(&mut game.player_hand, player_card_index);
+    let sender = tx_context::sender(ctx);
+    let total_points;
+    let house_card;
+    let player_card;   
     
-    // Simple AI: house plays first card in hand
-    let house_card = vector::remove(&mut game.house_hand, 0);
-
-    // Determine winner and calculate points
-    let total_points = getCardValue(&player_card) + getCardValue(&house_card);
-    let winner_address = determineWinner(&player_card, &house_card, &game.trump_card, game.player);
-
-    // Update scores
-    if (winner_address == game.player) {
-        game.player_score = game.player_score + total_points;
+    // Verify it's player's turn
+    assert!(game.player == sender, ENotPlayerTurn);
+    
+    if (option::is_some(&game.pending_house_card)) {
+        // House has already played
+        assert!(player_card_index < vector::length(&game.player_hand), EInvalidCard);
+        player_card = vector::remove(&mut game.player_hand, player_card_index);
+        
+        let pending = option::extract(&mut game.pending_house_card);
+        house_card = pending.card;
+        
+        // Determine winner and calculate points
+        total_points = getCardValue(&player_card) + getCardValue(&house_card);
+        let winner_address = determineWinner(&player_card, &house_card, &game.trump_card, game.player);
+        
+        // Update scores and set next player
+        if (winner_address == game.player) {
+            game.player_score = game.player_score + total_points;
+        } else {
+            game.house_score = game.house_score + total_points;
+        };
+        
+        game.current_player = winner_address;
+        
     } else {
-        game.house_score = game.house_score + total_points;
+        // Player plays first
+        assert!(player_card_index < vector::length(&game.player_hand), EInvalidCard);
+        player_card = vector::remove(&mut game.player_hand, player_card_index);
+        
+        // House responds
+        house_card = vector::remove(&mut game.house_hand, 0);
+        
+        // Determine winner and calculate points
+        total_points = getCardValue(&player_card) + getCardValue(&house_card);
+        let winner_address = determineWinner(&player_card, &house_card, &game.trump_card, game.player);
+        
+        // Update scores and set next player
+        if (winner_address == game.player) {
+            game.player_score = game.player_score + total_points;
+        } else {
+            game.house_score = game.house_score + total_points;
+        };
+        
+        // Set who plays first in next round
+        game.current_player = winner_address;
     };
 
-    // Modified draw logic to handle end-game scenarios
+    // Draw cards logic
     if (!vector::is_empty(&game.deck)) {
         if (vector::length(&game.deck) == 1) {
             // Only one card left, give it to the winner
-            if (winner_address == game.player) {
+            if (game.current_player == game.player) {
                 vector::push_back(&mut game.player_hand, vector::pop_back(&mut game.deck));
             } else {
                 vector::push_back(&mut game.house_hand, vector::pop_back(&mut game.deck));
             };
         } else {
             // Normal case - enough cards for both players
-            if (winner_address == game.player) {
+            if (game.current_player == game.player) {
                 // Winner (player) draws first
                 vector::push_back(&mut game.player_hand, vector::pop_back(&mut game.deck));
                 vector::push_back(&mut game.house_hand, vector::pop_back(&mut game.deck));
@@ -254,11 +316,11 @@ public entry fun playCard(game: &mut Game, player_card_index: u64, ctx: &mut TxC
         };
     };
 
-    // Emit events
+
     event::emit(CardPlayedEvent {
         player_card,
         house_card,
-        winner: winner_address,
+        winner: game.current_player,
         points: total_points,
     });
 
