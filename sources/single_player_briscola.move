@@ -203,7 +203,7 @@ module briscola::single_player_briscola {
     }
 
 
-/*=================== PLAY CARD ========================*/
+/*=================== CHECK HOUSE PLAY ========================*/
 
 public entry fun checkHousePlay(game: &mut Game, ctx: &mut TxContext) {
     let sender = tx_context::sender(ctx);
@@ -223,6 +223,8 @@ public entry fun checkHousePlay(game: &mut Game, ctx: &mut TxContext) {
         });
     };
 }
+
+/*=================== PLAY CARD ========================*/
 
 public entry fun playCard(game: &mut Game, player_card_index: u64, ctx: &mut TxContext) {
     // Check if game is already finished
